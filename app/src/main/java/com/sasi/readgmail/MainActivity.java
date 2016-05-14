@@ -12,16 +12,13 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -42,7 +39,6 @@ import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import com.sasi.readgmail.data.CSVContract;
-import com.sasi.readgmail.data.CsvBean;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -59,7 +55,6 @@ import javax.mail.internet.MimeMessage;
 
 import au.com.bytecode.opencsv.CSVReadProc;
 import au.com.bytecode.opencsv.CSVReader;
-import au.com.bytecode.opencsv.bean.CsvToBean;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
@@ -67,8 +62,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private static final String TAG = "MainActivity";
     GoogleAccountCredential mCredential;
-    private TextView mOutputText;
-    private Button mCallApiButton;
     ProgressDialog mProgress;
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
@@ -76,9 +69,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
 
-    private static final String BUTTON_TEXT = "Call Gmail API";
+    private static final String BUTTON_TEXT = "GET DATA FROM GMAIL";
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = {GmailScopes.GMAIL_LABELS};
+
+    TextView mOutputText, mStatus;
+    Button mCallApiButton, mCallChartButton;
+
+    List<Message> messageList;
 
     /**
      * Create the main activity.
@@ -88,20 +86,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LinearLayout activityLayout = new LinearLayout(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT);
-        activityLayout.setLayoutParams(lp);
-        activityLayout.setOrientation(LinearLayout.VERTICAL);
-        activityLayout.setPadding(16, 16, 16, 16);
 
-        ViewGroup.LayoutParams tlp = new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+        setContentView(R.layout.activity_main);
 
-        mCallApiButton = new Button(this);
-        mCallApiButton.setText(BUTTON_TEXT);
+        mOutputText = (TextView) findViewById(R.id.mOutputText);
+        mCallApiButton = (Button) findViewById(R.id.mCallApiButton);
+        mCallChartButton = (Button) findViewById(R.id.mCallChartButton);
+        mStatus = (TextView) findViewById(R.id.mStatus);
+
         mCallApiButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -111,21 +103,22 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 mCallApiButton.setEnabled(true);
             }
         });
-        activityLayout.addView(mCallApiButton);
 
-        mOutputText = new TextView(this);
-        mOutputText.setLayoutParams(tlp);
-        mOutputText.setPadding(16, 16, 16, 16);
+        mCallChartButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, ChartActivity.class));
+            }
+        });
+
         mOutputText.setVerticalScrollBarEnabled(true);
         mOutputText.setMovementMethod(new ScrollingMovementMethod());
         mOutputText.setText(
-                "Click the \'" + BUTTON_TEXT + "\' button to test the API.");
-        activityLayout.addView(mOutputText);
+                "Click the \'" + BUTTON_TEXT + "\' button to get the updated feed from Gmail. \nThen click on the EXPORT TO EXCEL button to generate " +
+                        "xls file which can be found in the DOWNLOAD folder.");
 
         mProgress = new ProgressDialog(this);
         mProgress.setMessage("Calling Gmail API ...");
-
-        setContentView(activityLayout);
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -406,9 +399,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             String msgID = null;
 
-            List<Message> messageList = listResponse.getMessages();
+            messageList = listResponse.getMessages();
 
-            if(messageList != null && messageList.size() > 0) {
+            if (messageList != null && messageList.size() > 0) {
 
                 // Delete from the table.
                 getContentResolver().delete(CSVContract.CSVEntry.CONTENT_URI, null, null);
@@ -421,15 +414,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 messages.add(msgID);
 
                 try {
-                    getMimeMessage(msgID);
+                    int match = getMimeMessage(msgID);
                     String s = getBody(msgID);
 
-                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                    SharedPreferences.Editor editor = sp.edit();
-                    editor.putString(msgID, s);
-                    editor.commit();
+//                    SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+//                    SharedPreferences.Editor editor = sp.edit();
+//                    editor.putString(msgID, s);
+//                    editor.commit();
 
-                    parseCSV(msgID);
+                    parseCSV(msgID, s, match);
 
                     messages.add(s);
 
@@ -441,30 +434,30 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             return messages;
         }
 
-        private void getMessageForID(String id) {
+//        private void getMessageForID(String id) {
+//
+//            String user = "me";
+//
+//            try {
+//                Message msg = mService.users().messages().get(user, id).setFormat("raw").execute();
+//                byte[] emailBytes = Base64.decodeBase64(msg.getRaw());
+//
+//                Properties props = new Properties();
+//                Session session = Session.getDefaultInstance(props, null);
+//                MimeMessage email = new MimeMessage(session, new ByteArrayInputStream(emailBytes));
+//
+//                email.toString();
+//
+//                Log.d(TAG, "-> " + email.getSubject());
+//
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } catch (MessagingException e) {
+//                e.printStackTrace();
+//            }
+//        }
 
-            String user = "me";
-
-            try {
-                Message msg = mService.users().messages().get(user, id).setFormat("raw").execute();
-                byte[] emailBytes = Base64.decodeBase64(msg.getRaw());
-
-                Properties props = new Properties();
-                Session session = Session.getDefaultInstance(props, null);
-                MimeMessage email = new MimeMessage(session, new ByteArrayInputStream(emailBytes));
-
-                email.toString();
-
-                Log.d(TAG, "-> " + email.getSubject());
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (MessagingException e) {
-                e.printStackTrace();
-            }
-        }
-
-        public MimeMessage getMimeMessage(String messageId)
+        public int getMimeMessage(String messageId)
                 throws IOException, MessagingException {
 
             String user = "me";
@@ -479,9 +472,23 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
             MimeMessage email = new MimeMessage(session, new ByteArrayInputStream(emailBytes));
 
-            Log.d(TAG, messageId + " -> " + email.getSubject());
+            String subject = email.getSubject().toUpperCase();
 
-            return email;
+            Log.d(TAG, messageId + " -> " + subject);
+
+            int match = subject.indexOf("O2");
+
+            if (match > -1) {
+                return 0;
+            }
+
+            match = subject.indexOf("GG");
+
+            if (match > -1) {
+                return 1;
+            }
+
+            return -1;
         }
 
         private String getBody(String messageId) {
@@ -492,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 Message message = mService.users().messages().get(user, messageId).execute();
                 List<MessagePart> parts = message.getPayload().getParts();
 
-                Log.d(TAG, messageId + " -> " + parts.size());
+//                Log.d(TAG, messageId + " -> " + parts.size());
 
                 Properties props = new Properties();
                 Session session = Session.getDefaultInstance(props, null);
@@ -520,9 +527,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 }
 
 
-                Log.d(TAG, "\\r: " + s.indexOf("\r"));
-                Log.d(TAG, "\\n: " + s.indexOf("\n"));
-                Log.d(TAG, "\\r\\n: " + s.indexOf("\r\n"));
+//                Log.d(TAG, "\\r: " + s.indexOf("\r"));
+//                Log.d(TAG, "\\n: " + s.indexOf("\n"));
+//                Log.d(TAG, "\\r\\n: " + s.indexOf("\r\n"));
 
                 // Replace LF (\n) CR (\r)
                 s = s.replace("\r\n", "*$*");
@@ -540,15 +547,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             return "";
         }
 
-        private void parseCSV(String key) {
+        private void parseCSV(final String key, String val, final int match) {
 
-//            String key = "1546895d41eecd9e";
-            String val = "";
-
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-            val = sp.getString(key, null);
-
-//            Log.d(TAG, "val: " + val.substring(0, 250));
+//            String val = "";
+//
+//            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+//            val = sp.getString(key, null);
 
 //            Date,ConnType,Lat,Lon,Download,Upload,Latency,ServerName,InternalIp,ExternalIp
             CSVReader reader = new CSVReader(new StringReader(val), ',', '\"', 1);
@@ -559,16 +563,29 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 @Override
                 public void procRow(int rowIndex, String... values) {
 
-//                    Log.d(TAG, rowIndex + "**** : " + values.toString());
-
                     ContentValues cv = new ContentValues();
-                    cv.put(CSVContract.CSVEntry.COLUMN_CSVP_GG_FLAG, 1);
-                    cv.put(CSVContract.CSVEntry.COLUMN_CSVP_DATE, values[0]);
-                    cv.put(CSVContract.CSVEntry.COLUMN_CSVP_TIME, values[0]);
-                    cv.put(CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED, String.valueOf(values[5]));
-                    cv.put(CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED, String.valueOf(values[5]));
+                    String dateTime = values[0];
 
-                    valuesArrayList.add(cv);
+                    try {
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_ID, key);
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_GG_FLAG, match);
+
+//                        Log.d(TAG, key + "DATETIME: $" + dateTime);
+//                        Log.d(TAG, "TIME: $" + dateTime.substring(11) + "$");
+
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_DATE, dateTime.substring(0, 10));
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_TIME, dateTime.substring(11).replace(":", "."));
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE, values[1]);
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED, String.valueOf(values[4]));
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED, String.valueOf(values[5]));
+
+                        valuesArrayList.add(cv);
+                    } catch (Exception e) {
+
+//                        Log.d(TAG, "dateTime: " + dateTime);
+
+                        e.printStackTrace();
+                    }
                 }
             });
 
@@ -588,6 +605,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         @Override
         protected void onPostExecute(List<String> output) {
             mProgress.hide();
+
+            mStatus.setText("No. of reports received: " + (messageList != null ? messageList.size() : 0));
+
             if (output == null || output.size() == 0) {
                 mOutputText.setText("No results returned.");
             } else {

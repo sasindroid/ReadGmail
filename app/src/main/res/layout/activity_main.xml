@@ -10,8 +10,34 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.sasi.readgmail.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <Button
+        android:id="@+id/mCallApiButton"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:text="GET DATA FROM GMAIL"/>
+
+    <Button
+        android:id="@+id/mCallChartButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/mCallApiButton"
+        android:text="EXPORT TO EXCEL"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/mCallChartButton"
+        android:layout_margin="16dp"
+        android:id="@+id/mStatus"/>
+
+    <TextView
+        android:id="@+id/mOutputText"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/mStatus"
+        android:gravity="center"
+        android:textColor="@android:color/holo_blue_light"
+        android:textSize="8sp"
+        android:scrollbars="vertical"
         android:text="Hello World!"/>
 </RelativeLayout>
