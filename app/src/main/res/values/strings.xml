@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">gg vs o2 n/w stats (v1)</string>
+    <string name="app_name">gg vs o2</string>
+    <string name="process_reports">PROCESS REPORTS</string>
+    <string name="export_to_excel">EXPORT TO EXCEL</string>
 </resources>

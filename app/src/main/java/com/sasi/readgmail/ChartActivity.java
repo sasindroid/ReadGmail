@@ -58,6 +58,10 @@ public class ChartActivity extends AppCompatActivity implements LoaderManager.Lo
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chart);
 
+        if(getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
         linechart = (LineChartView) findViewById(R.id.linechart);
         tvChartHeader = (TextView) findViewById(R.id.tvChartHeader);
 
@@ -71,7 +75,8 @@ public class ChartActivity extends AppCompatActivity implements LoaderManager.Lo
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Uri uri = CSVContract.CSVEntry.CONTENT_URI;
         String[] projection = new String[]{CSVContract.CSVEntry.COLUMN_CSVP_ID, CSVContract.CSVEntry.COLUMN_CSVP_GG_FLAG, CSVContract.CSVEntry.COLUMN_CSVP_DATE,
-                CSVContract.CSVEntry.COLUMN_CSVP_TIME, CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE, CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED, CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED};
+                CSVContract.CSVEntry.COLUMN_CSVP_TIME, CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE, CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED,
+                CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED, CSVContract.CSVEntry.COLUMN_CSVP_SERVER_NAME};
         String selection = CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE + " != " + "'Wifi' ";
 //                + "AND " + CSVContract.CSVEntry.COLUMN_CSVP_DATE + " = '2016-04-21' AND "
 //                + CSVContract.CSVEntry.COLUMN_CSVP_GG_FLAG + " = 1";
@@ -185,6 +190,7 @@ public class ChartActivity extends AppCompatActivity implements LoaderManager.Lo
                 sheet.addCell(new Label(4, 0, CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE));
                 sheet.addCell(new Label(5, 0, CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED));
                 sheet.addCell(new Label(6, 0, CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED));
+                sheet.addCell(new Label(7, 0, CSVContract.CSVEntry.COLUMN_CSVP_SERVER_NAME));
 
                 for (int i = 0; i < cursor.getCount(); i++) {
                     cursor.moveToPosition(i);
@@ -195,6 +201,7 @@ public class ChartActivity extends AppCompatActivity implements LoaderManager.Lo
                     String conn = cursor.getString(cursor.getColumnIndex(CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE));
                     String dspeed = cursor.getString(cursor.getColumnIndex(CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED));
                     String uspeed = cursor.getString(cursor.getColumnIndex(CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED));
+                    String serverName = cursor.getString(cursor.getColumnIndex(CSVContract.CSVEntry.COLUMN_CSVP_SERVER_NAME));
 
                     String flagStr = "";
 
@@ -216,6 +223,7 @@ public class ChartActivity extends AppCompatActivity implements LoaderManager.Lo
                     sheet.addCell(new Label(4, i + 1, conn));
                     sheet.addCell(new Label(5, i + 1, dspeed));
                     sheet.addCell(new Label(6, i + 1, uspeed));
+                    sheet.addCell(new Label(7, i + 1, serverName));
                 }
 
                 //closing cursor
@@ -236,7 +244,7 @@ public class ChartActivity extends AppCompatActivity implements LoaderManager.Lo
         }
 
         mProgress.dismiss();
-        tvChartHeader.setText("Check your DOWNLOADS folder for the file named - " + fileName);
+        tvChartHeader.setText("Check your DOWNLOADS folder for the file named - " + fileName + " \n\n OR ");
 
     }
 

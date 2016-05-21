@@ -38,6 +38,7 @@ public class CSVContract {
         public static final String COLUMN_CSVP_GG_FLAG = "gg_flag";
         public static final String COLUMN_CSVP_DATE = "date_run";
         public static final String COLUMN_CSVP_TIME = "time_run";
+        public static final String COLUMN_CSVP_SERVER_NAME = "server_name";
         public static final String COLUMN_CSVP_CONNECTION_TYPE = "con_type";
         public static final String COLUMN_CSVP_DOWNLOAD_SPEED = "dspeed";
         public static final String COLUMN_CSVP_UPLOAD_SPEED = "uspeed";

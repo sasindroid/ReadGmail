@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class CSVDBHelper extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
     static final String DATABASE_NAME = "csv.db";
 
 
@@ -59,7 +59,8 @@ public class CSVDBHelper extends SQLiteOpenHelper {
                 + CSVContract.CSVEntry.COLUMN_CSVP_ID + " TEXT NOT NULL, "
                 + CSVContract.CSVEntry.COLUMN_CSVP_GG_FLAG + " INTEGER DEFAULT 1, "
                 + CSVContract.CSVEntry.COLUMN_CSVP_DATE + " TEXT NOT NULL, "
-                + CSVContract.CSVEntry.COLUMN_CSVP_TIME + " TEXT NOT NULL, "
+                + CSVContract.CSVEntry.COLUMN_CSVP_TIME + " TEXT, "
+                + CSVContract.CSVEntry.COLUMN_CSVP_SERVER_NAME + " TEXT, "
                 + CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE + " TEXT, "
                 + CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED + " TEXT NOT NULL, "
                 + CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED + " TEXT NOT NULL );";

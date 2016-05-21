@@ -13,6 +13,7 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
@@ -69,9 +70,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
 
-    private static final String BUTTON_TEXT = "GET DATA FROM GMAIL";
+    //    private static final String BUTTON_TEXT = "GET DATA FROM GMAIL";
     private static final String PREF_ACCOUNT_NAME = "accountName";
-    private static final String[] SCOPES = {GmailScopes.GMAIL_LABELS};
+    private static final String[] SCOPES = {GmailScopes.MAIL_GOOGLE_COM};
 
     TextView mOutputText, mStatus;
     Button mCallApiButton, mCallChartButton;
@@ -87,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_new);
 
         mOutputText = (TextView) findViewById(R.id.mOutputText);
         mCallApiButton = (Button) findViewById(R.id.mCallApiButton);
@@ -114,11 +115,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         mOutputText.setVerticalScrollBarEnabled(true);
         mOutputText.setMovementMethod(new ScrollingMovementMethod());
         mOutputText.setText(
-                "Click the \'" + BUTTON_TEXT + "\' button to get the updated feed from Gmail. \nThen click on the EXPORT TO EXCEL button to generate " +
-                        "xls file which can be found in the DOWNLOAD folder.");
+                "Click the \'" + getResources().getString(R.string.process_reports) + "\' button to get the updated feed from Gmail. \nThen click on the "
+                        + getResources().getString(R.string.export_to_excel) + " button to generate " +
+                        "xlsx file which can be found in the DOWNLOAD folder.");
 
         mProgress = new ProgressDialog(this);
-        mProgress.setMessage("Calling Gmail API ...");
+        mProgress.setMessage("Parsing reports from your Gmail ...");
 
         // Initialize credentials and service object.
         mCredential = GoogleAccountCredential.usingOAuth2(
@@ -578,6 +580,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         cv.put(CSVContract.CSVEntry.COLUMN_CSVP_CONNECTION_TYPE, values[1]);
                         cv.put(CSVContract.CSVEntry.COLUMN_CSVP_DOWNLOAD_SPEED, String.valueOf(values[4]));
                         cv.put(CSVContract.CSVEntry.COLUMN_CSVP_UPLOAD_SPEED, String.valueOf(values[5]));
+                        cv.put(CSVContract.CSVEntry.COLUMN_CSVP_SERVER_NAME, String.valueOf(values[7]));
 
                         valuesArrayList.add(cv);
                     } catch (Exception e) {
@@ -606,7 +609,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         protected void onPostExecute(List<String> output) {
             mProgress.hide();
 
-            mStatus.setText("No. of reports received: " + (messageList != null ? messageList.size() : 0));
+            mStatus.setText("No. of reports retrieved & processed: " + (messageList != null ? messageList.size() : 0));
 
             if (output == null || output.size() == 0) {
                 mOutputText.setText("No results returned.");
@@ -614,6 +617,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 output.add(0, "Data retrieved using the Gmail API:");
                 mOutputText.setText(TextUtils.join("\n", output));
             }
+
+            mCallApiButton.setTextColor(ContextCompat.getColor(getBaseContext(), R.color.red_500));
+            mCallChartButton.setTextColor(ContextCompat.getColor(getBaseContext(), R.color.green_500));
         }
 
         @Override
